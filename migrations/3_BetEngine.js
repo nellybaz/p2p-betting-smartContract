@@ -1,5 +1,5 @@
 const BetEngine = artifacts.require("BetEngine");
 
 module.exports = function (deployer) {
-  deployer.deploy(BetEngine, "0x2502a3015B3665C820d75A2c5297F91A981C960e");
+  deployer.deploy(BetEngine, "0x8d4192DE5eb5803e2Ecc0F9d6672e7BaeF3F502E");
 };
