@@ -35,7 +35,7 @@ contract BetEngine{
     mapping(string => mapping(address => uint)) public bettings;
 
      // mapping bets to paid users
-    mapping(string => mapping(address => bool)) public paidUsers;
+    mapping(string => mapping(address => uint)) public paidUsers;
 
 
      /*****  Events start ******/
@@ -101,6 +101,10 @@ contract BetEngine{
    /*****  Modifiers ends ******/
 
 
+    function getBalance() public view returns (uint){
+        return msg.sender.balance;
+    }
+    
     function iamOwner() public view returns (string memory) {
         if (owner == msg.sender){
             return "yes";
@@ -178,13 +182,13 @@ contract BetEngine{
 
         BetDetails memory betDetails = bets[betId];
 
-         mapping(address => bool) storage paidUsersForBet = paidUsers[betId];
+        mapping(address => uint) storage paidUsersForBet = paidUsers[betId];
 
         // Ensure that user is not already paid
-        require(!paidUsersForBet[user]);
+        require(paidUsersForBet[user] == 0, "User already paid");
 
         // Ensure the bet is only disbursed on or after the expiry date.
-        require(now >= betDetails.expiryDate);
+        require(now >= betDetails.expiryDate, "You cannot disburse before set time");
 
         // mapping(address => uint) winningUsers = bettings[winningOds];
 
@@ -193,18 +197,18 @@ contract BetEngine{
         uint totalBetAmountToBeWon = 0;
 
         string memory ods1 = bets[betId].ods1;
-        string memory ods2 = bets[betId].ods1;
-        string memory ods3 = bets[betId].ods1;
+        string memory ods2 = bets[betId].ods2;
+        string memory ods3 = bets[betId].ods3;
 
         string memory betIdForEvent = betId;
 
         if(!compareStrings(ods1, winningOdsId)){
             totalBetAmountToBeWon += addedOds[ods1];
         }
-        else if(!compareStrings(ods2, winningOdsId)){
+        if(!compareStrings(ods2, winningOdsId)){
             totalBetAmountToBeWon += addedOds[ods2];
         }
-        else if(!compareStrings(ods3, winningOdsId)){
+        if(!compareStrings(ods3, winningOdsId)){
             totalBetAmountToBeWon += addedOds[ods3];
         }
 
@@ -216,13 +220,17 @@ contract BetEngine{
         uint userEarnedFraction = (userBetAmount * precision)/totalAmountInWinningPool;
         uint userEarnedAmount = (userEarnedFraction * totalBetAmountToBeWon) / precision + userBetAmount;
 
-        paidUsersForBet[msg.sender] = true;
+        paidUsersForBet[msg.sender] = userEarnedAmount;
         msg.sender.transfer(userEarnedAmount);
 
         emit UserIsPaid(user, userEarnedAmount, betIdForEvent);
     }
 
-
+    function getEarnedAmount(string memory betId) public view returns (uint){
+        mapping(address => uint) storage paidUsersForBet = paidUsers[betId];
+        return paidUsersForBet[msg.sender];
+    }
+    
     /**
         Utils function
      */
